@@ -30,9 +30,9 @@ class AmazonUnitTest {
     @Test
     @DisplayName("specification-based")
     void testItem_ValidConstruction() {
-        Item item = new Item("BOOK", "Test Book", 5, 19.99);
+        Item item = new Item(ItemType.OTHER, "Test Book", 5, 19.99);
 
-        assertEquals("BOOK", item.getType());
+        assertEquals(ItemType.OTHER, item.getType());
         assertEquals("Test Book", item.getName());
         assertEquals(5, item.getQuantity());
         assertEquals(19.99, item.getPricePerUnit(), 1e-9);
@@ -41,9 +41,9 @@ class AmazonUnitTest {
     @Test
     @DisplayName("specification-based")
     void testItem_GettersReturnCorrectValues() {
-        Item item = new Item("ELECTRONICS", "Headphones", 2, 99.99);
+        Item item = new Item(ItemType.ELECTRONIC, "Headphones", 2, 99.99);
 
-        assertEquals("ELECTRONICS", item.getType());
+        assertEquals(ItemType.ELECTRONIC, item.getType());
         assertEquals("Headphones", item.getName());
         assertEquals(2, item.getQuantity());
         assertEquals(99.99, item.getPricePerUnit(), 1e-9);
@@ -53,7 +53,7 @@ class AmazonUnitTest {
     @DisplayName("specification-based")
     void testAmazon_Calculate_WithMockedRule() {
         List<Item> items = new ArrayList<>();
-        items.add(new Item("BOOK", "Book", 1, 25.00));
+        items.add(new Item(ItemType.OTHER, "Book", 1, 25.00));
 
         when(mockCart.getItems()).thenReturn(items);
         when(mockRule.priceToAggregate(items)).thenReturn(25.00);
@@ -68,7 +68,7 @@ class AmazonUnitTest {
     @Test
     @DisplayName("specification-based")
     void testAmazon_AddToCart_CallsCartAdd() {
-        Item item = new Item("CLOTHING", "Jacket", 1, 75.00);
+        Item item = new Item(ItemType.OTHER, "Jacket", 1, 75.00);
 
         doNothing().when(mockCart).add(item);
 
@@ -99,7 +99,7 @@ class AmazonUnitTest {
         PriceRule rule2 = mock(PriceRule.class);
 
         List<Item> items = Arrays.asList(
-                new Item("BOOK", "Book", 1, 20.00)
+                new Item(ItemType.OTHER, "Book", 1, 20.00)
         );
 
         when(mockCart.getItems()).thenReturn(items);
@@ -117,17 +117,17 @@ class AmazonUnitTest {
     @Test
     @DisplayName("structural-based")
     void testItem_AllItemTypes() {
-        Item book = new Item("BOOK", "Book", 1, 15.00);
-        Item electronics = new Item("ELECTRONICS", "Phone", 1, 500.00);
-        Item clothing = new Item( "CLOTHING", "Shirt", 2, 25.00); // <-- fixed spelling
-        Item food = new Item("FOOD", "Snack", 5, 3.00);
-        Item furniture = new Item("FURNITURE", "Table", 1, 200.00);
+        Item book = new Item(ItemType.OTHER, "Book", 1, 15.00);
+        Item electronics = new Item(ItemType.ELECTRONIC, "Phone", 1, 500.00);
+        Item clothing = new Item(ItemType.OTHER, "Shirt", 2, 25.00);
+        Item food = new Item(ItemType.OTHER, "Snack", 5, 3.00);
+        Item furniture = new Item(ItemType.OTHER, "Table", 1, 200.00);
 
-        assertEquals("BOOK", book.getType());
-        assertEquals("ELECTRONICS", electronics.getType());
-        assertEquals("CLOTHING", clothing.getType());
-        assertEquals("FOOD", food.getType());
-        assertEquals("FURNITURE", furniture.getType());
+        assertEquals(ItemType.OTHER, book.getType());
+        assertEquals(ItemType.ELECTRONIC, electronics.getType());
+        assertEquals(ItemType.OTHER, clothing.getType());
+        assertEquals(ItemType.OTHER, food.getType());
+        assertEquals(ItemType.OTHER, furniture.getType());
     }
 
     @Test
@@ -152,7 +152,7 @@ class AmazonUnitTest {
     @Test
     @DisplayName("structural-based")
     void testItem_QuantityAndPriceCalculation() {
-        Item item = new Item("BOOK", "Programming Book", 3, 35.50);
+        Item item = new Item(ItemType.OTHER, "Programming Book", 3, 35.50);
 
         double expectedTotal = 3 * 35.50;
         double actualTotal = item.getQuantity() * item.getPricePerUnit();
@@ -163,8 +163,8 @@ class AmazonUnitTest {
     @Test
     @DisplayName("structural-based")
     void testAmazon_AddToCart_MultipleItems() {
-        Item item1 = new Item("BOOK", "Book 1", 1, 20.00);
-        Item item2 = new Item("BOOK", "Book 2", 1, 30.00);
+        Item item1 = new Item(ItemType.OTHER, "Book 1", 1, 20.00);
+        Item item2 = new Item(ItemType.OTHER, "Book 2", 1, 30.00);
 
         doNothing().when(mockCart).add(any(Item.class));
 

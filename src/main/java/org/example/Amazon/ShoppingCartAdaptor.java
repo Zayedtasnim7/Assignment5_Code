@@ -1,50 +1,51 @@
 package org.example.Amazon;
 
-import org.example.Amazon.Cost.ItemType;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// Class responsible for querying and saving invoices in the database
+/** Adaptor that persists and loads items from the shoppingcart table. */
 public class ShoppingCartAdaptor implements ShoppingCart {
 
-    private Database connection;  // Represents the database connection object
+    private final Database connection;
 
-    // Constructor that initializes the database connection using dependency injection
     public ShoppingCartAdaptor(Database connection) {
         this.connection = connection;
     }
 
     @Override
     public void add(Item item) {
-        connection.withSql(() -> {  // Executes SQL operations within the database connection
-            try (var ps = connection.getConnection().prepareStatement("insert into shoppingcart (name, type, quantity, priceperunit) values (?,?,?,?)")) {  // Prepares the SQL query to insert a new invoice
-                ps.setString(1, item.getName());  // Sets the customer name in the query
-                ps.setString(2, item.getType().name());  // Sets the invoice value in the query
-                ps.setInt(3, item.getQuantity());  // Sets the invoice value in the query
-                ps.setDouble(4, item.getPricePerUnit());  // Sets the invoice value in the query
-                ps.execute();  // Executes the insert query
+        connection.withSql(() -> {
+            try (var ps = connection.getConnection().prepareStatement(
+                    "insert into shoppingcart (name, type, quantity, priceperunit) values (?,?,?,?)")) {
 
-                connection.getConnection().commit();  // Commits the transaction to make the changes permanent
+                ps.setString(1, item.getName());
+                ps.setString(2, item.getType());       // <-- type is a String
+                ps.setInt(3, item.getQuantity());
+                ps.setDouble(4, item.getPricePerUnit());
+                ps.executeUpdate();
+
+                connection.getConnection().commit();
             }
-            return null;  // Returns null as this operation does not need to return any value
+            return null;
         });
     }
 
     @Override
     public List<Item> getItems() {
-        return connection.withSql(() -> {  // Executes SQL operations within the database connection
-            try (var ps = connection.getConnection().prepareStatement("select * from shoppingcart")) {  // Prepares the SQL query to select all invoices
-                final var rs = ps.executeQuery();  // Executes the query and stores the result set
+        return connection.withSql(() -> {
+            try (var ps = connection.getConnection().prepareStatement(
+                    "select name, type, quantity, priceperunit from shoppingcart");
+                 var rs = ps.executeQuery()) {
 
-                List<Item> ShoppingCart = new ArrayList<>();  // Creates a list to store all retrieved invoices
-                while (rs.next()) {  // Iterates through each row in the result set
-                    ShoppingCart.add(new Item(ItemType.valueOf(rs.getString("type")),rs.getString("name"),
-                            rs.getInt("quantity"),rs.getDouble("priceperunit")));  // Creates a new Invoice object and adds it to the list
+                List<Item> items = new ArrayList<>();
+                while (rs.next()) {
+                    items.add(new Item(
+                            rs.getString("type"),          // <-- pass String, not ItemType
+                            rs.getString("name"),
+                            rs.getInt("quantity"),
+                            rs.getDouble("priceperunit")));
                 }
-
-                return ShoppingCart;  //  Returns the list of all invoices
+                return items;
             }
         });
     }
@@ -52,8 +53,11 @@ public class ShoppingCartAdaptor implements ShoppingCart {
     @Override
     public int numberOfItems() {
         return connection.withSql(() -> {
-            try(var ps = connection.getConnection().prepareStatement("select count(*) from shoppingcart")){
-                return ps.getFetchSize();
+            try (var ps = connection.getConnection().prepareStatement(
+                    "select count(*) from shoppingcart");
+                 var rs = ps.executeQuery()) {
+
+                return rs.next() ? rs.getInt(1) : 0;   // <-- correct way to read count(*)
             }
         });
     }

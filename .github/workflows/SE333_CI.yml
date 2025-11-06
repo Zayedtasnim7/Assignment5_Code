@@ -18,16 +18,19 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # 1) Static analysis first
+      # 1) Static analysis first (generate checkstyle-result.xml)
       - name: Run Checkstyle (validate)
         run: mvn -B -Dcheckstyle.failOnViolation=false clean validate checkstyle:checkstyle
 
       - name: Show Checkstyle outputs
         if: always()
         run: |
+          echo "== ls target =="
           ls -la target || true
+          echo "== ls target/site =="
           ls -la target/site || true
-          ls -la target/checkstyle-result.xml || true
+          echo "== cat target/checkstyle-result.xml head =="
+          head -n 40 target/checkstyle-result.xml || true
 
       - name: Upload Checkstyle report
         if: always()
@@ -39,26 +42,32 @@ jobs:
             target/site/checkstyle.html
           if-no-files-found: warn
 
-      # 2) Tests + coverage
-      - name: Run tests
-        run: mvn -B test
+      # 2) Tests
+      - name: Run tests (Surefire)
+        run: mvn -B -DskipTests=false test
 
+      - name: Show Surefire reports
+        if: always()
+        run: |
+          echo "== Surefire files =="
+          ls -la target/surefire-reports || true
+          echo "== Surefire summary (txt) =="
+          for f in target/surefire-reports/*.txt; do
+            echo "----- $f -----"; sed -n '1,200p' "$f"; echo; 
+          done 2>/dev/null || true
+          echo "== Surefire summary (xml names) =="
+          ls -la target/surefire-reports/*.xml 2>/dev/null || true
+
+      # 3) JaCoCo report (creates target/site/jacoco/jacoco.xml)
       - name: Generate JaCoCo report (verify)
         run: mvn -B verify jacoco:report
 
       - name: Show JaCoCo outputs
         if: always()
         run: |
+          echo "== ls target/site =="
           ls -la target/site || true
+          echo "== ls target/site/jacoco =="
           ls -la target/site/jacoco || true
-          ls -la target/site/jacoco/jacoco.xml || true
-
-      - name: Upload JaCoCo coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: |
-            target/site/jacoco/jacoco.xml
-            target/site/jacoco/index.html
-          if-no-files-found: warn
+          echo "== head jacoco.xml =="
+          head -n 40 target/site/jacoco/jacoco.xml |
