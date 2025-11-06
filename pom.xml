@@ -9,42 +9,56 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
+        <!-- Use Java 21 to match CI runner -->
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <junit.jupiter.version>5.11.4</junit.jupiter.version>
+        <mockito.version>5.15.2</mockito.version>
+        <checkstyle.plugin.version>3.3.0</checkstyle.plugin.version>
+        <jacoco.plugin.version>0.8.10</jacoco.plugin.version>
+        <surefire.plugin.version>3.5.2</surefire.plugin.version>
     </properties>
+
     <dependencies>
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.5.0</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.5.0</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>5.15.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.11.4</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- Optional: AssertJ -->
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.27.3</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Optional: in-memory DB for tests if needed -->
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
@@ -52,39 +66,52 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
-
-            <!-- Checkstyle Plugin -->
+            <!-- Compiler -->
             <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-checkstyle-plugin</artifactId>
-    <version>3.3.0</version>
-    <configuration>
-        <configLocation>google_checks.xml</configLocation>
-        <encoding>UTF-8</encoding>
-        <consoleOutput>true</consoleOutput>
-        <failsOnError>false</failsOnError>
-        <failOnViolation>false</failOnViolation>
-        <violationSeverity>warning</violationSeverity>
-        <logViolationsToConsole>true</logViolationsToConsole>
-    </configuration>
-    <executions>
-        <execution>
-            <id>validate</id>
-            <phase>validate</phase>
-            <goals>
-                <goal>checkstyle</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
 
-            <!-- JaCoCo Plugin -->
+            <!-- Checkstyle (warn-only; does not fail CI) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <configuration>
+                    <!-- Uses bundled Google ruleset -->
+                    <configLocation>google_checks.xml</configLocation>
+
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>false</failsOnError>
+                    <failOnViolation>false</failOnViolation>
+                    <violationSeverity>warning</violationSeverity>
+                    <logViolationsToConsole>true</logViolationsToConsole>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- JaCoCo (coverage) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.10</version>
+                <version>${jacoco.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
@@ -102,30 +129,11 @@
                 </executions>
             </plugin>
 
+            <!-- Surefire (JUnit Platform) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.2</version>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.10</version>
-                <executions>
-                    <execution>
-                        <id>default-prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>jacoco-report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <version>${surefire.plugin.version}</version>
             </plugin>
         </plugins>
     </build>

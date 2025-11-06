@@ -4,7 +4,7 @@
 This project demonstrates automated testing using GitHub Actions, including unit tests, integration tests, static analysis (Checkstyle), and code coverage (JaCoCo) for two e-commerce packages: BarnesAndNoble and Amazon.
 
 ## Build Status
-[![CI Build](https://github.com/TasnimZayed/Assignment5_Code/actions/workflows/SE333_CI.yml/badge.svg)](https://github.com/TasnimZayed/Assignment5_Code/actions/workflows/SE333_CI.yml)
+![CI Build](https://github.com/Zayedtasnim7/Assignment5_Code/actions/workflows/SE333_CI.yml/badge.svg?branch=main)
 
 ## Test Results
 - All GitHub Actions checks: ✅ PASSED

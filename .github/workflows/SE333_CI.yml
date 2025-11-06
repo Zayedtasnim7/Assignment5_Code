@@ -1,36 +1,28 @@
-name: SE333 CI Pipeline
+- name: Run Checkstyle (validate)
+  run: mvn -B -Dcheckstyle.failOnViolation=false clean validate checkstyle:checkstyle
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+- name: Upload Checkstyle report
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: checkstyle-report
+    path: |
+      target/checkstyle-result.xml
+      target/site/checkstyle.html
+    if-no-files-found: warn
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+- name: Run tests
+  run: mvn -B test
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+- name: Generate JaCoCo report (verify)
+  run: mvn -B verify jacoco:report
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build and verify with Maven
-        run: mvn -B clean verify
-
-      - name: Generate JaCoCo report
-        if: always()
-        run: mvn jacoco:report
-
-      - name: Upload JaCoCo coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco
+- name: Upload JaCoCo coverage
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: jacoco-report
+    path: |
+      target/site/jacoco/jacoco.xml
+      target/site/jacoco/index.html
+    if-no-files-found: warn
