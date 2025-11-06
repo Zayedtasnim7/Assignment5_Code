@@ -86,16 +86,20 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${checkstyle.plugin.version}</version>
-                <configuration>
                     <!-- Uses bundled Google ruleset -->
+                <configuration>
                     <configLocation>google_checks.xml</configLocation>
-
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>false</failsOnError>
                     <failOnViolation>false</failOnViolation>
                     <violationSeverity>warning</violationSeverity>
                     <logViolationsToConsole>true</logViolationsToConsole>
+
+                    <!-- make artifact path deterministic -->
+                    <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+                    <outputFileFormat>xml</outputFileFormat>
                 </configuration>
+
                 <executions>
                     <execution>
                         <id>checkstyle</id>

@@ -22,6 +22,13 @@ jobs:
       - name: Run Checkstyle (validate)
         run: mvn -B -Dcheckstyle.failOnViolation=false clean validate checkstyle:checkstyle
 
+      - name: Show Checkstyle outputs
+        if: always()
+        run: |
+          ls -la target || true
+          ls -la target/site || true
+          ls -la target/checkstyle-result.xml || true
+
       - name: Upload Checkstyle report
         if: always()
         uses: actions/upload-artifact@v4
@@ -38,6 +45,13 @@ jobs:
 
       - name: Generate JaCoCo report (verify)
         run: mvn -B verify jacoco:report
+
+      - name: Show JaCoCo outputs
+        if: always()
+        run: |
+          ls -la target/site || true
+          ls -la target/site/jacoco || true
+          ls -la target/site/jacoco/jacoco.xml || true
 
       - name: Upload JaCoCo coverage
         if: always()
