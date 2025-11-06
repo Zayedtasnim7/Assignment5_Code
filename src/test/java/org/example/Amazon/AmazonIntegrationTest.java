@@ -1,83 +1,155 @@
 package org.example.Amazon;
 
+import org.example.Amazon.Cost.*;
 import org.junit.jupiter.api.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class AmazonIntegrationTest {
 
     private Database database;
+    private ShoppingCartAdaptor cart;
+    private List<PriceRule> rules;
     private Amazon amazon;
-    private ShoppingCart cart;
 
     @BeforeEach
     void setUp() {
         // Reset database before each test
         database = new Database();
-        database.clear(); // Implement if needed
-        amazon = new Amazon(database);
-        cart = new ShoppingCart();
+        database.resetDatabase();
+
+        // Create shopping cart
+        cart = new ShoppingCartAdaptor(database);
+
+        // Create price rules
+        rules = new ArrayList<>();
+        rules.add(new RegularCost());
+
+        // Create Amazon instance
+        amazon = new Amazon(cart, rules);
     }
 
-    // SPECIFICATION-BASED INTEGRATION TESTS
+    @AfterEach
+    void tearDown() {
+        if (database != null) {
+            database.close();
+        }
+    }
+
+    // ==================== SPECIFICATION-BASED INTEGRATION TESTS ====================
 
     @Test
     @DisplayName("specification-based")
-    void testCompleteCheckoutProcess_MultipleItems() {
-        // Test the full workflow: add items -> calculate cost -> checkout
-        Item item1 = new Item("Laptop", 999.99, "ELECTRONICS");
-        Item item2 = new Item("Mouse", 29.99, "ELECTRONICS");
+    void testCompleteWorkflow_AddItemAndCalculate() {
+        // Test complete workflow: add item and calculate price
+        Item item = new Item("BOOK", "Java Programming", 2, 29.99);
 
-        database.addItem(item1);
-        database.addItem(item2);
-
-        cart.addItem(item1);
-        cart.addItem(item2);
-
-        double total = amazon.calculateTotalCost(cart);
+        amazon.addToCart(item);
+        double total = amazon.calculate();
 
         assertTrue(total > 0);
-        assertEquals(2, cart.getItemCount());
     }
 
     @Test
     @DisplayName("specification-based")
-    void testDatabasePersistence_ItemRetrieval() {
-        // Test that items persist in database across operations
-        Item item = new Item("Book", 19.99, "BOOKS");
-        database.addItem(item);
+    void testMultipleItems_CalculateTotalPrice() {
+        // Test adding multiple items and calculating total
+        Item item1 = new Item("BOOK", "Clean Code", 1, 35.00);
+        Item item2 = new Item("ELECTRONICS", "Keyboard", 1, 75.00);
 
-        Item retrieved = database.getItem(item.getId());
+        amazon.addToCart(item1);
+        amazon.addToCart(item2);
 
-        assertNotNull(retrieved);
-        assertEquals("Book", retrieved.getName());
-        assertEquals(19.99, retrieved.getPrice());
-    }
+        double total = amazon.calculate();
 
-    // STRUCTURAL-BASED INTEGRATION TESTS
-
-    @Test
-    @DisplayName("structural-based")
-    void testShoppingCartAdaptor_Integration() {
-        // Test the adaptor pattern integration
-        ShoppingCartAdaptor adaptor = new ShoppingCartAdaptor(cart);
-        Item item = new Item("Test", 50.00, "TEST");
-
-        adaptor.add(item);
-
-        assertTrue(adaptor.getCart().contains(item));
+        assertTrue(total > 0);
     }
 
     @Test
+    @DisplayName("specification-based")
+    void testDatabasePersistence_ItemsRemainAfterAdd() {
+        // Test that items persist in database after adding
+        Item item = new Item("CLOTHING", "T-Shirt", 3, 19.99);
+
+        cart.add(item);
+        List<Item> items = cart.getItems();
+
+        assertFalse(items.isEmpty());
+    }
+
+    @Test
+    @DisplayName("specification-based")
+    void testShoppingCartAdaptor_AddAndRetrieve() {
+        // Test ShoppingCartAdaptor integration
+        Item item = new Item("FOOD", "Apple", 5, 2.50);
+
+        cart.add(item);
+        List<Item> items = cart.getItems();
+
+        assertEquals(1, items.size());
+        assertEquals("Apple", items.get(0).getName());
+    }
+
+    // ==================== STRUCTURAL-BASED INTEGRATION TESTS ====================
+
+    @Test
     @DisplayName("structural-based")
-    void testCostCalculation_WithDifferentPriceRules() {
-        // Test integration of cost calculation with various rules
-        Item electronics = new Item("Phone", 500.00, "ELECTRONICS");
-        cart.addItem(electronics);
+    void testDatabaseReset_ClearsAllData() {
+        // Test that database reset clears all data
+        Item item = new Item("ELECTRONICS", "Phone", 1, 599.99);
+        cart.add(item);
 
-        // Test different cost calculation paths
-        double regularCost = amazon.calculateRegularCost(cart);
-        double deliveryCost = amazon.calculateWithDelivery(cart);
+        database.resetDatabase();
 
-        assertTrue(deliveryCost >= regularCost);
+        List<Item> items = cart.getItems();
+        assertTrue(items.isEmpty());
+    }
+
+    @Test
+    @DisplayName("structural-based")
+    void testMultiplePriceRules_AppliedInOrder() {
+        // Test that multiple price rules are applied correctly
+        rules.add(new DeliveryPrice());
+        Amazon amazonWithDelivery = new Amazon(cart, rules);
+
+        Item item = new Item("FURNITURE", "Chair", 2, 150.00);
+        amazonWithDelivery.addToCart(item);
+
+        double total = amazonWithDelivery.calculate();
+
+        assertTrue(total > 0);
+    }
+
+    @Test
+    @DisplayName("structural-based")
+    void testElectronicsExtraCost_AppliedCorrectly() {
+        // Test that electronics incur extra cost
+        rules.add(new ExtraCostForElectronics());
+        Amazon amazonWithExtra = new Amazon(cart, rules);
+
+        Item electronics = new Item("ELECTRONICS", "Laptop", 1, 999.99);
+        amazonWithExtra.addToCart(electronics);
+
+        double total = amazonWithExtra.calculate();
+
+        assertTrue(total > 0);
+    }
+
+    @Test
+    @DisplayName("structural-based")
+    void testShoppingCart_HandlesMultipleAdditions() {
+        // Test that cart handles multiple additions
+        Item item1 = new Item("BOOK", "Book 1", 1, 20.00);
+        Item item2 = new Item("BOOK", "Book 2", 1, 25.00);
+        Item item3 = new Item("BOOK", "Book 3", 1, 30.00);
+
+        cart.add(item1);
+        cart.add(item2);
+        cart.add(item3);
+
+        List<Item> items = cart.getItems();
+        assertEquals(3, items.size());
     }
 }

@@ -1,110 +1,76 @@
 package org.example.Barnes;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class BarnesAndNobleTest {
 
-    private BookDatabase database;
-    private BuyBookProcess buyProcess;
+    private BookDatabase bookDatabase;
+    private BuyBookProcess process;
+    private BarnesAndNoble bn;
+
+    private Book bookA;
+    private Book bookB;
 
     @BeforeEach
     void setUp() {
-        database = new BookDatabase();
-        buyProcess = new BuyBookProcess(database);
+        // These interfaces/abstracts must be mocked
+        bookDatabase = mock(BookDatabase.class);
+        process = mock(BuyBookProcess.class);
+
+        bn = new BarnesAndNoble(bookDatabase, process);
+
+        // Mock books returned by DB
+        bookA = mock(Book.class);
+        bookB = mock(Book.class);
+
+        when(bookA.getQuantity()).thenReturn(5);
+        when(bookA.getPrice()).thenReturn(10);   // price type in your code is int
+        when(bookB.getQuantity()).thenReturn(2);
+        when(bookB.getPrice()).thenReturn(25);
+
+        when(bookDatabase.findByISBN("111")).thenReturn(bookA);
+        when(bookDatabase.findByISBN("222")).thenReturn(bookB);
     }
 
-    // SPECIFICATION-BASED TESTS
-    // These test the requirements/specifications without looking at code
+    // ===== SPECIFICATION-BASED =====
+    @Test
+    @DisplayName("specification-based")
+    void priceForCart_validOrder_returnsSummary_and_buysEach() {
+        Map<String, Integer> order = Map.of("111", 3, "222", 2);
+
+        PurchaseSummary summary = bn.getPriceForCart(order);
+
+        assertNotNull(summary);                   // returns some summary object
+        verify(process).buyBook(bookA, 3);       // integration with process
+        verify(process).buyBook(bookB, 2);
+        verifyNoMoreInteractions(process);
+    }
 
     @Test
     @DisplayName("specification-based")
-    void testBuyBook_ValidISBN_ReturnsPurchaseSummary() {
-        // Test boundary: valid ISBN
-        Book book = new Book("1234567890", "Test Book", 29.99);
-        database.addBook(book);
+    void priceForCart_nullOrder_returnsNull() {
+        assertNull(bn.getPriceForCart(null));
+        verifyNoInteractions(process);
+    }
 
-        PurchaseSummary summary = buyProcess.buyBook("1234567890");
+    // ===== STRUCTURAL-BASED =====
+    @Test
+    @DisplayName("structural-based")
+    void whenOrderExceedsInventory_onlyAvailableQtyIsBought() {
+        // Ask for more than stock; implementation should clamp to available
+        Map<String, Integer> order = Map.of("111", 10);
+
+        PurchaseSummary summary = bn.getPriceForCart(order);
 
         assertNotNull(summary);
-        assertEquals("Test Book", summary.getBookTitle());
-        assertEquals(29.99, summary.getPrice());
-    }
-
-    @Test
-    @DisplayName("specification-based")
-    void testBuyBook_InvalidISBN_ReturnsNull() {
-        // Test boundary: invalid/non-existent ISBN
-        PurchaseSummary summary = buyProcess.buyBook("9999999999");
-
-        assertNull(summary);
-    }
-
-    @Test
-    @DisplayName("specification-based")
-    void testBuyBook_NullISBN_ThrowsException() {
-        // Test boundary: null input
-        assertThrows(IllegalArgumentException.class, () -> {
-            buyProcess.buyBook(null);
-        });
-    }
-
-    @Test
-    @DisplayName("specification-based")
-    void testBuyBook_EmptyISBN_ReturnsNull() {
-        // Test boundary: empty string
-        PurchaseSummary summary = buyProcess.buyBook("");
-
-        assertNull(summary);
-    }
-
-    // STRUCTURAL-BASED TESTS
-    // These test based on code structure (branches, paths, statements)
-
-    @Test
-    @DisplayName("structural-based")
-    void testBuyBook_DatabaseLookupPath() {
-        // Test the path where database.findBook() is called
-        Book book = new Book("1111111111", "Structural Test", 19.99);
-        database.addBook(book);
-
-        PurchaseSummary summary = buyProcess.buyBook("1111111111");
-
-        assertNotNull(summary);
-        assertTrue(summary.getPrice() > 0);
-    }
-
-    @Test
-    @DisplayName("structural-based")
-    void testBuyBook_NullBookReturnPath() {
-        // Test the branch where findBook returns null
-        PurchaseSummary summary = buyProcess.buyBook("0000000000");
-
-        assertNull(summary);
-    }
-
-    @Test
-    @DisplayName("structural-based")
-    void testBookDatabase_AddAndRetrieve() {
-        // Test internal database operations
-        Book book1 = new Book("1234", "Book One", 10.99);
-        Book book2 = new Book("5678", "Book Two", 20.99);
-
-        database.addBook(book1);
-        database.addBook(book2);
-
-        assertEquals(book1, database.findBook("1234"));
-        assertEquals(book2, database.findBook("5678"));
-    }
-
-    @Test
-    @DisplayName("structural-based")
-    void testPurchaseSummary_AllFields() {
-        // Test all getters/setters to achieve statement coverage
-        PurchaseSummary summary = new PurchaseSummary("Test Book", 25.50, "9876543210");
-
-        assertEquals("Test Book", summary.getBookTitle());
-        assertEquals(25.50, summary.getPrice());
-        assertEquals("9876543210", summary.getIsbn());
+        verify(process).buyBook(bookA, 5);  // clamped to available qty
+        verifyNoMoreInteractions(process);
     }
 }
