@@ -70,4 +70,4 @@ jobs:
           echo "== ls target/site/jacoco =="
           ls -la target/site/jacoco || true
           echo "== head jacoco.xml =="
-          head -n 40 target/site/jacoco/jacoco.xml |
+          head -n 40 target/site/jacoco/jacoco.xml || true
