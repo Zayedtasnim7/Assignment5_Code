@@ -1,28 +1,50 @@
-- name: Run Checkstyle (validate)
-  run: mvn -B -Dcheckstyle.failOnViolation=false clean validate checkstyle:checkstyle
+name: SE333 CI Pipeline
 
-- name: Upload Checkstyle report
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: checkstyle-report
-    path: |
-      target/checkstyle-result.xml
-      target/site/checkstyle.html
-    if-no-files-found: warn
+on:
+  push:
+    branches: [ "main" ]
 
-- name: Run tests
-  run: mvn -B test
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-- name: Generate JaCoCo report (verify)
-  run: mvn -B verify jacoco:report
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
 
-- name: Upload JaCoCo coverage
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: jacoco-report
-    path: |
-      target/site/jacoco/jacoco.xml
-      target/site/jacoco/index.html
-    if-no-files-found: warn
+      # 1) Static analysis first
+      - name: Run Checkstyle (validate)
+        run: mvn -B -Dcheckstyle.failOnViolation=false clean validate checkstyle:checkstyle
+
+      - name: Upload Checkstyle report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-report
+          path: |
+            target/checkstyle-result.xml
+            target/site/checkstyle.html
+          if-no-files-found: warn
+
+      # 2) Tests + coverage
+      - name: Run tests
+        run: mvn -B test
+
+      - name: Generate JaCoCo report (verify)
+        run: mvn -B verify jacoco:report
+
+      - name: Upload JaCoCo coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: |
+            target/site/jacoco/jacoco.xml
+            target/site/jacoco/index.html
+          if-no-files-found: warn
