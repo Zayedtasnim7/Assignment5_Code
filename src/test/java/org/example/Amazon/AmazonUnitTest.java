@@ -32,7 +32,7 @@ class AmazonUnitTest {
     void testItem_ValidConstruction() {
         Item item = new Item(ItemType.OTHER, "Test Book", 5, 19.99);
 
-        assertEquals(ItemType.OTHER, item.getType());
+        assertEquals("OTHER", item.getType());
         assertEquals("Test Book", item.getName());
         assertEquals(5, item.getQuantity());
         assertEquals(19.99, item.getPricePerUnit(), 1e-9);
@@ -43,7 +43,7 @@ class AmazonUnitTest {
     void testItem_GettersReturnCorrectValues() {
         Item item = new Item(ItemType.ELECTRONIC, "Headphones", 2, 99.99);
 
-        assertEquals(ItemType.ELECTRONIC, item.getType());
+        assertEquals("ELECTRONIC", item.getType());
         assertEquals("Headphones", item.getName());
         assertEquals(2, item.getQuantity());
         assertEquals(99.99, item.getPricePerUnit(), 1e-9);
@@ -123,11 +123,11 @@ class AmazonUnitTest {
         Item food = new Item(ItemType.OTHER, "Snack", 5, 3.00);
         Item furniture = new Item(ItemType.OTHER, "Table", 1, 200.00);
 
-        assertEquals(ItemType.OTHER, book.getType());
-        assertEquals(ItemType.ELECTRONIC, electronics.getType());
-        assertEquals(ItemType.OTHER, clothing.getType());
-        assertEquals(ItemType.OTHER, food.getType());
-        assertEquals(ItemType.OTHER, furniture.getType());
+        assertEquals("OTHER", book.getType());
+        assertEquals("ELECTRONIC", electronics.getType());
+        assertEquals("OTHER", clothing.getType());
+        assertEquals("OTHER", food.getType());
+        assertEquals("OTHER", furniture.getType());
     }
 
     @Test
